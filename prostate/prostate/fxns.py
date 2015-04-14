@@ -37,9 +37,29 @@ def data_to_new_format(data):
                                     np.array([np.array(datum.ys) for datum in data])
 
 
+def xs_and_ys_to_new_format(xs, ys):
+    """
+    xs, ys are dataframes
+    will have to drop the observations at time 0
+    """
+    return recovery_fxns.recovery_X(\
+                                    ys[0],\
+                                    xs.values,\
+                                    np.array([np.array(y.dropna().index) for (idx,y) in ys.iterrows()]),\
+                                    ),\
+                                    np.array([np.array(y.dropna()) for (idx,y) in ys.iterrows()])
+                                    
 def xs_data():
     import data.prostate.prostate.constants as constants
-    return pd.DataFrame.from_csv(constants.xs_file,index_col=0).T
+    xs = pd.DataFrame.from_csv(constants.xs_file,index_col=0).T
+    xs.index = xs.index.astype(int)
+    return xs
+    
+def xs_with_s_data():
+    xs = xs_data()
+    ys = sex_ys()
+    xs['s'] = ys[0]
+    return xs
 
 def sex_ys():
     import data.prostate.prostate.constants as constants
@@ -47,6 +67,19 @@ def sex_ys():
     d.index = d.index.astype(int)
     return d
 
+
+class filter_df_by_treatment(object):
+
+    prostatectomy = 0
+    
+    def __init__(self, treatment):
+        self.treatment = treatment
+
+    def __call__(self, df):
+        if self.treatment == filter_df_by_treatment.prostatectomy:
+            return df.loc[(df.index >= 30000) & (df.index < 40000)]
+        assert False
+        
 def prostatectomy_sex_ys(min_s=0):
     d = sex_ys()
     import pdb
@@ -57,11 +90,12 @@ some boolean functions of original ys dataframe
 """
 def enough_data(cutoff, ys):
     post_ys = ys[ys.index > 0]
+    #print post_ys, len(post_ys.dropna()), cutoff
     return len(post_ys.dropna()) >= cutoff
 
 def does_not_improve(time, ys):
     post_ys = ys[ys.index > 0]
-    decay_fit_f = recovery_fxns.fit_decay_f(post_ys, post_ys)
+    decay_fit_f = recovery_fxns.fit_decay_f(post_ys.index, post_ys)
     s = ys[0]
     return decay_fit_f(time) < s
 
