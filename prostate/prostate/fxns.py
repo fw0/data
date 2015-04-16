@@ -100,15 +100,32 @@ def does_not_improve(time, ys):
     return decay_fit_f(time) < s
 
 def not_k_zeros_in_a_row(k, ys):
+    ans1 = True
     post_ys = ys[ys.index > 0].dropna()
     up_to = 0
     for i in xrange(len(post_ys)):
         if post_ys.iloc[i] == 0:
             if up_to+1 >= k:
-                return False
+                ans1 = False
             up_to += 1
         else:
             up_to = 0
     if up_to >= k:
-        return False
+        ans1 = False
+
+    """
+    this was the old code, but it worked with dataframes with NA
+    ans2 = True
+    for i in range(len(ys)-k):
+        if sum([ys.iloc[x] < 0.01001 for x in range(i,i+k)]) == k:
+            ans2 = False
+    """
+    return ans1
+    try:
+        assert ans1 == ans2
+    except:
+        print ans1, ans2
+        print ys
+        pdb.set_trace()
+    return ans1
     return True
