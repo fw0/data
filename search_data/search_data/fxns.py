@@ -126,12 +126,15 @@ def split_data_file(path, num_lines, path_to_folder = lambda s: '%s_%s' % (s, 's
     if os.path.exists(no_head_path):
         os.remove(no_head_path)
     no_head_cmd = 'tail -n +2 %s > %s' % (path, no_head_path)
+    print no_head_cmd
     subprocess.call(no_head_cmd, shell=True)
 
     # split the files
-    split_cmd = 'split -d -l %d -a 4 %s %s/no_head_' % (num_lines, no_head_path, _folder_path)
+    split_cmd = 'split -a 3 -l %d -a 4 %s %s/no_head_' % (num_lines, no_head_path, _folder_path)
+    print split_cmd
     subprocess.call(split_cmd, shell=True)
 
+    
     # create split files with header
     with_head_split_paths = []
     for no_head_split_file in os.listdir(_folder_path):
@@ -150,12 +153,12 @@ def split_data_file(path, num_lines, path_to_folder = lambda s: '%s_%s' % (s, 's
 
     return folder_path(_folder_path)
 
-def df_f_to_path_f(f):
+def df_f_to_path_f(f, write_index = True):
 
     def h(read_file_path, write_file_path):
         df = pd.read_csv(read_file_path.path, sep='\t', index_col=0)
         ans = f(df)
-        ans.to_csv(write_file_path.path, sep='\t')
+        ans.to_csv(write_file_path.path, sep='\t', index = write_index)
 
     return h
 
