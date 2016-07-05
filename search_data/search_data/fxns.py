@@ -40,6 +40,8 @@ class file_path(object):
         return open(self.path, 'wb')
 
     def copy_from(self, from_file_path):
+        if self.path == from_file_path:
+            return
         reader = from_file_path.get_reader()
         writer = self.get_writer()
         for line in reader:
@@ -53,6 +55,7 @@ class file_path(object):
             print 'removing', self.path
             sys.stdout.flush()
             try:
+                #pass
                 os.remove(self.path)
             except OSError:
                 print 'no file to remove', self.path
@@ -60,6 +63,16 @@ class file_path(object):
 
 class file_collection_path(object):
 
+    @classmethod
+    def from_handles(cls, handles):
+        _handles = []
+        for handle in handles:
+            try:
+                _handles = _handles + list(iter(handle))
+            except TypeError:
+                _handles.append(handle)
+        return cls(_handles)
+    
     def __init__(self, file_paths):
         self.file_paths = file_paths #[file_path(path) for path in raw_file_paths]
 
@@ -78,11 +91,22 @@ class folder_path(file_collection_path):
             write_file_path.copy_from(from_file_path)
             self.file_paths.append(write_file_path)
 
-    def __init__(self, _folder_path):
+    def __init__(self, _folder_path, temp=False):
+        self.temp = temp
         self.folder_path = _folder_path
         #assert os.path.exists(_folder_path)
         folder_getter(self.folder_path, False)
-        self.file_paths = [file_path('%s/%s' % (_folder_path, path)) for path in os.listdir(_folder_path)]
+        self.file_paths = [file_path('%s/%s' % (_folder_path, path), temp) for path in os.listdir(_folder_path)]
+
+    def __del__(self):
+        if self.temp:
+            assert np.all([fp.temp for fp in self.file_paths])
+            try:
+                print 'deleting', self.folder_path
+                os.rmdir(self.folder_path)
+                print 'deleted', self.folder_path
+            except OSError as e:
+                pass
 
 def apply_to_file_collection_path(mapper, f, _file_collection_path):
     """
@@ -115,7 +139,7 @@ def folder_getter(path, override=True):
         os.makedirs(path)
     return path
 
-def split_data_file(path, num_lines, path_to_folder = lambda s: '%s_%s' % (s, 'split'), folder_getter = folder_getter):
+def split_data_file(path, num_lines, path_to_folder = lambda s: os.tmpnam(), folder_getter = folder_getter):
 
     # create output folder
     _folder_path = path_to_folder(path)
@@ -151,7 +175,7 @@ def split_data_file(path, num_lines, path_to_folder = lambda s: '%s_%s' % (s, 's
     rm_no_head_cmd = 'rm %s' % no_head_path
     subprocess.call(rm_no_head_cmd, shell=True)
 
-    return folder_path(_folder_path)
+    return folder_path(_folder_path, temp=True)
 
 def df_f_to_path_f(f, write_index = True):
 
@@ -200,34 +224,16 @@ def categorical_df_to_onehot_df(df, level_to_idxs):
         verts.append(col_to_df(feat, df[feat], level_to_idxs[feat]))
 
     return pd.concat(verts, axis=1)
-        
+
+# conventions
+
+def out_path_f(cache_folder, name, tag):
+    return '%s/%s/%s' % (cache_folder, name, tag)
+
+
+# actual data        
 
 def a_data():
     return pd.read_csv('%s/%s' % (constants.data_folder, 'data.2016-04-01.txt'),sep='\t')
 
 
-
-
-class file_handle_deprecated(object):
-
-    @classmethod
-    def open(cls, *args, **kwargs):
-        return cls(open(*args, **kwargs))
-
-    def __init__(self, f):
-        self.f = f
-
-    def write(self, *args, **kwargs):
-        return self.f.write(*args, **kwargs)
-
-    def seek(self, *args, **kwargs):
-        return self.f.seek(*args, **kwargs)
-
-    def copy_from(self, read_file_handle):
-        read_file_handle.seek(0)
-        self.seek(0)
-        for line in read_file_handle:
-            #print line
-            #import sys
-            #sys.stdout.flush()
-            self.write(line)
