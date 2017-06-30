@@ -15,8 +15,10 @@ def standard_format(n_rows, data_file, sep=',', delim_whitespace=False):
         df = pd.read_csv(data_file, header=None, sep=sep, index_col=None)
     else:
         df = pd.read_csv(data_file, header=None, delim_whitespace=True)
-    xs = df.iloc[:n_rows,:-1].values
-    ys = df.iloc[:n_rows,-1].values
+    relevant_df = df.iloc[:n_rows,:]
+    relevant_df = (relevant_df - relevant_df.mean()) / relevant_df.std()
+    xs = np.concatenate((relevant_df.iloc[:,:-1].values, np.ones(shape=(len(relevant_df),1))), axis=1)
+    ys = relevant_df.iloc[:,-1].values
     return xs, ys
 
 def CA_housing(n_rows=-1):
@@ -103,6 +105,8 @@ def get_data_helper(training_proportion, training_sampler, get_data_f, num_data,
     original_xs_test_shape, original_ys_test_shape = xs_test.shape, ys_test.shape
     xs_train, ys_train = training_sampler(xs_train, ys_train)
     sampled_xs_train_shape, sampled_ys_train_shape = xs_train.shape, ys_train.shape
+
+    return xs_train, xs_test, ys_train, ys_test
 
     # print sizes
     size_info_list = [
