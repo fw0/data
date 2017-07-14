@@ -10,7 +10,7 @@ home_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_folder = '%s/%s' % (home_folder, 'data')
 
 
-def standard_format(n_rows, data_file, sep=',', delim_whitespace=False):
+def standard_format(data_file, sep=',', delim_whitespace=False, n_rows=None):
     if not delim_whitespace:
         df = pd.read_csv(data_file, header=None, sep=sep, index_col=None)
     else:
@@ -21,16 +21,20 @@ def standard_format(n_rows, data_file, sep=',', delim_whitespace=False):
     ys = relevant_df.iloc[:,-1].values
     return xs, ys
 
-def CA_housing(n_rows=-1):
+def CA_housing(n_rows=None):
     data_file = '%s/cal_housing.data' % data_folder
     return standard_format(n_rows, data_file)
 
 
-def boston_housing(n_rows=-1):
+def boston_housing(n_rows=None):
     data_file = '%s/boston_housing.data' % data_folder
     return standard_format(n_rows, data_file, delim_whitespace=True)
 
 
+def kin_data(name, n_rows=None):
+    data_file = '%s/%s.data' % (data_folder, name)
+    print data_file
+    return standard_format(data_file, sep=',', delim_whitespace=True, n_rows=n_rows)
 
 def subsample_indicator(xs, f):
     raw = np.array(map(f, xs))
@@ -86,7 +90,30 @@ def doubly_robust_paper_pca_subsample(alpha, xs, ys):
         caching.fig_archiver.archive_fig(fig)
         #basic.display_fig_inline(fig)
     return xs[keep], ys[keep]
-    
+
+
+def lsif_data_subsample(xs, ys, N_train, N_test, c_cols=None):
+    # assumes last column of xs is indicator feature
+    if c_cols is None:
+        c_cols = range(xs.shape[1])
+    c = np.random.choice(c_cols)
+    xs = xs - np.min(xs, axis=0)[np.newaxis,:]
+    xs = xs / (np.append(np.max(xs[:,0:-1], axis=0), 1))[np.newaxis,:]
+    xs = np.random.permutation(xs)
+    xs[:,-1] = 1.
+    p = np.minimum(1, 4*(xs[:,c]**2))
+    keep = np.random.uniform(size=len(xs)) < p
+    until = np.argmax(np.cumsum(keep.astype(int)) == N_train) + 1
+    xs_train = xs[0:until][keep[0:until]]
+    ys_train = ys[0:until][keep[0:until]]
+    xs_test = xs[until:until+N_test]
+    ys_test = ys[until:until+N_test]
+#    print ys_test[0:10]
+    assert len(xs_train) == N_train
+    assert len(xs_test) == N_test
+    print np.max(xs, axis=0), np.min(xs, axis=0)
+    pdb.set_trace()
+    return xs_train, xs_test, ys_train, ys_test
         
 def split(training_proportion, seed, xs, ys):
     training_indicator = np.random.uniform(size=len(xs)) < training_proportion
@@ -95,7 +122,7 @@ def split(training_proportion, seed, xs, ys):
 def get_data_helper(training_proportion, training_sampler, get_data_f, num_data, seed):
 
     # get_data
-    np.random.seed(seed)
+#    np.random.seed(seed)
     xs, ys = get_data_f(num_data)
     original_xs_shape, original_ys_shape = xs.shape, ys.shape
     from sklearn.preprocessing import StandardScaler
