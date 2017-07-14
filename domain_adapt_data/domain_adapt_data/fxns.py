@@ -92,8 +92,10 @@ def doubly_robust_paper_pca_subsample(alpha, xs, ys):
     return xs[keep], ys[keep]
 
 
-def lsif_data_subsample(xs, ys, N_train, N_test, c_cols=None):
+def lsif_data_subsample(xs, ys, N_train, N_test, seed=None, c_cols=None):
     # assumes last column of xs is indicator feature
+    if not (seed is None):
+        np.random.seed(seed)
     if c_cols is None:
         c_cols = range(xs.shape[1])
     c = np.random.choice(c_cols)
@@ -111,8 +113,6 @@ def lsif_data_subsample(xs, ys, N_train, N_test, c_cols=None):
 #    print ys_test[0:10]
     assert len(xs_train) == N_train
     assert len(xs_test) == N_test
-    print np.max(xs, axis=0), np.min(xs, axis=0)
-    pdb.set_trace()
     return xs_train, xs_test, ys_train, ys_test
         
 def split(training_proportion, seed, xs, ys):
