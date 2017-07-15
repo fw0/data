@@ -92,7 +92,7 @@ def doubly_robust_paper_pca_subsample(alpha, xs, ys):
     return xs[keep], ys[keep]
 
 
-def lsif_data_subsample(xs, ys, N_train, N_test, seed=None, c_cols=None):
+def lsif_data_subsample(xs, ys, N_train, N_test, seed=None, c_cols=None, same_dim=0, diff_dim=0):
     # assumes last column of xs is indicator feature
     if not (seed is None):
         np.random.seed(seed)
@@ -105,11 +105,16 @@ def lsif_data_subsample(xs, ys, N_train, N_test, seed=None, c_cols=None):
     xs[:,-1] = 1.
     p = np.minimum(1, 4*(xs[:,c]**2))
     keep = np.random.uniform(size=len(xs)) < p
-    until = np.argmax(np.cumsum(keep.astype(int)) == N_train) + 1
-    xs_train = xs[0:until][keep[0:until]]
-    ys_train = ys[0:until][keep[0:until]]
-    xs_test = xs[until:until+N_test]
-    ys_test = ys[until:until+N_test]
+    until = np.argmax(np.cumsum(keep.astype(int)) == N_test) + 1
+    add_sd = 1.
+    same_mean = 0.
+    diff_mean = 1.
+    xs_test = xs[0:until][keep[0:until]]
+    xs_test = np.concatenate((xs_test, np.random.normal(same_mean,add_sd,size=(N_test,same_dim)), np.random.normal(diff_mean,add_sd,size=(N_est,same_dim))), axis=1)
+    ys_test = ys[0:until][keep[0:until]]
+    xs_train = xs[until:until+N_train]
+    xs_train = np.concatenate((xs_train, np.random.normal(same_mean,add_sd,size=(N_train,same_dim)), np.random.normal(same_mean,add_sd,size=(N_train,same_dim))), axis=1)
+    ys_train = ys[until:until+N_train]
 #    print ys_test[0:10]
     assert len(xs_train) == N_train
     assert len(xs_test) == N_test
