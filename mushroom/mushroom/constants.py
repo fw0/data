@@ -1,0 +1,13 @@
+home_folder = '/Users/fultonw/Documents/projects/code/data/mushroom'
+data_folder = '%s/%s' % (home_folder, 'data')
+mushroom_data_file = '%s/%s' % (data_folder, 'mushroom_binary_processed.csv')
+spect_data_file = '%s/%s' % (data_folder, 'spect_binary.csv')
+vote_data_file = '%s/%s' % (data_folder, 'votes_binary.csv')
+mammo_data_file = '%s/%s' % (data_folder, 'mammo_binary_processed.csv')
+haberman_data_file = '%s/%s' % (data_folder, 'haberman_binary_processed.csv')
+spam_data_file = '%s/%s' % (data_folder, 'spambase_binary_processed.csv')
+breast_data_file = '%s/%s' % (data_folder, 'bcancer_binary.csv')
+cars_data_file = '%s/%s' % (data_folder, 'cars_binary.csv')
+tictactoe_data_file = '%s/%s' % (data_folder, 'tictactoe_binary.csv')
+whitewine_data_file = '%s/%s' % (data_folder, 'winequality-white.csv')
+redwine_data_file = '%s/%s' % (data_folder, 'winequality-red.csv')
